@@ -467,7 +467,7 @@ EOF
 	read -p "Version InstansCMS [2.14.2]: " instantselect
 	instantselect=${instantselect:-2.14.2}
 	if [ "$instantselect" == "n" ]; then
-		makeblankfolder;
+		makeblanksite;
 		else
 		makerealsite;
 	fi;
@@ -475,7 +475,7 @@ EOF
 
 # ========================== Create blank folder for site ========================================
 # ======================== Создание пустой папки для сайта =======================================
-makeblankfolder() {
+makeblanksite() {
 	chown -R nobody:nobody /usr/local/lsws/conf/vhosts/$sitename;
 	mkdir "/home/$username/$sitename";
 	chown -R "$username:$username /home/$username";
