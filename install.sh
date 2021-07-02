@@ -116,6 +116,7 @@ echo -e "\033[32;40m---------------------------------------------
 	\rRU     Введите имя и пароль для OLS admin.   |
 	\r--------------------------------------------- \e[0m";	
 	/usr/local/lsws/admin/misc/admpass.sh;
+	rc-service lsws restart;
 }
 
 # ========================= Install Alpine Configuration Framawork ====================================================
