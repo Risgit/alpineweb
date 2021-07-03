@@ -101,7 +101,8 @@ EOF
 		chmod 0755 /etc/init.d/lsws;
 		
 		rc-update add lsws;
-		/usr/local/lsws/bin/lswsctrl start
+		/usr/local/lsws/bin/lswsctrl start;
+		rc-service lsws restart;
 		webadmin_password;
 	fi;
 	acf;
