@@ -676,7 +676,11 @@ resume() {
 	'url' => 'https://$sitename:7082',\n \
 	'icon' => 'fa-cogs')";
 	
+	if grep 'Phpmyadmin' /usr/local/lsws/admin/html.open/view/inc/configui.php > /dev/null; then
+	continue;
+	else 
 	sed -i '105a '"$butt"'' /usr/local/lsws/admin/html.open/view/inc/configui.php;
+	fi;
 	
 	echo -e "\033[32;40m--------------------------------------------- 
 	\rEN   Openlitespeed, php, mysql, phpmyadmin,        
