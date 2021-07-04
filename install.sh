@@ -556,7 +556,7 @@ newcert() {
 	/usr/local/lsws/bin/lswsctrl stop;
 	certbot certonly --standalone --preferred-challenges http -d $sitename -m $mail;
 	/usr/local/lsws/bin/lswsctrl start;
-	sed -i '/\$SERVER_ROOT\/admin\/conf\/webadmin.crt/a  \'"  map                     $sitename $sitename"'' /usr/local/lsws/conf/httpd_config.conf;
+	sed -i '/*:443/a  \'"  map                     $sitename $sitename"'' /usr/local/lsws/conf/httpd_config.conf;
 	cat > /usr/local/lsws/conf/vhosts/$sitename/vhconf.conf << EOF
 docRoot                   \$VH_ROOT
 enableGzip                1
