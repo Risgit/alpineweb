@@ -103,7 +103,6 @@ EOF
 		rc-update add lsws;
 		/usr/local/lsws/bin/lswsctrl start;
 		rc-service lsws restart;
-		webadmin_password;
 	fi;
 	acf;
 	newuser
@@ -298,7 +297,8 @@ sslcheckoff() {
 	if [ ! -e "/root/.config/lftp/rc" ]; then 
 		echo -e "set ssl:verify-certificate no" > /root/.config/lftp/rc
 		chmod 0600 /root/.config/lftp/rc;
-	fi;	
+	fi;
+	webadmin_password;
 	newuser;
 }
 
