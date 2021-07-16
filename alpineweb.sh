@@ -6,10 +6,10 @@ main() {
 		repo;
 		upgrade;
 		openlite;
+		acf;
+		phpinstall;
+		ftpinstall;
 	fi;
-	acf;
-	phpinstall;
-	ftpinstall;
 	if [ ! -e "/usr/bin/mariadbd" ]; then
 		sqlinstall;
 		mysql_secure;
