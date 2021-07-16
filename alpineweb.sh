@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ash
 
 main() {
 	if [ ! -e "/etc/init.d/lsws" ]; then
@@ -835,12 +835,6 @@ resume() {
 	\rRU   ACF                \033[36;40m https://$sitename:7082\033[32;40m
 	\r---------------------------------------------\e[0m";
 	exit;
-}
-
-ech() {
-	echo $username;
-	echo $sitename;
-	echo $base;
 }
 
 rmuser() {
