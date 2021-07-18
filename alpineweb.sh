@@ -178,7 +178,7 @@ phpinstall() {
 		apk add php$phpver-litespeed php$phpver-xml php$phpver-fileinfo php$phpver-ftp php$phpver-curl php$phpver-intl php$phpver-bcmath php$phpver-gd;
 		apk add php$phpver-memcache php$phpver-memcached php$phpver-json php$phpver-iconv php$phpver-zip php$phpver-pecl-memcache php$phpver-opcache;
 		apk add php$phpver-sockets php$phpver-posix php$phpver-mysqli php$phpver-pecl-memcached php$phpver-openssl php$phpver-simplexml;
-		apk add memcached bind-tools openssh;
+		apk add memcached bind-tools openssh libidn;
 		rc-service memcached start;
 		rc-update add memcached;
 		pkill lsphp;
@@ -311,16 +311,6 @@ EOF
 	/usr/local/lsws/bin/lswsctrl restart
 }
 
-# ================================ Off ssl checking for ftp connection ==========================================
-	# ================== Отключение проверки сертификата ssl для ftp соединения с сервером бэкапов ==================
-	# sslcheckoff() {
-	# if [ ! -e "/root/.config/lftp/rc" ]; then 
-	# echo -e "set ssl:verify-certificate no" > /root/.config/lftp/rc
-	# chmod 0600 /root/.config/lftp/rc;
-	# fi;
-	# webadmin_password;
-	# newuser;
-# }
 
 # ======================================= Adding new user ======================================================
 # ================================ Добавление нового пользователя ==============================================
@@ -399,6 +389,7 @@ newsite() {
 	\rRU             Например: mysite.ru           |
 	\r--------------------------------------------- \e[0m";		
 	read -p 'Site name: ' sitename;
+	sitename=$(echo "$sitename" | idn);
 	if [ -e /home/$username/$sitename ]; then 
 		echo -e "\033[32;40m--------------------------------------------- 
 		\rEN   \e[0m\033[31;40m       Site $sitename already exists!  \e[0m\033[32;40m
@@ -525,9 +516,10 @@ makerealsite() {
 	\rRU   Скачан и распакован InstantCMS $instantselect
 	\r--------------------------------------------- \e[0m";	
 	/usr/local/lsws/bin/lswsctrl restart
-	echo Site: "$sitename" > /root/."$username";
+	echo Site: "  " >> /root/."$username";
+	echo Site: "$sitename" >> /root/."$username";
 	echo User: "$username" >> /root/."$username";
-	echo Password: $userpassword >> /root/.$username;
+	echo Password: "$userpassword" >> /root/."$username";
 	mkdir /home/$username/backups/$sitename;
 	chown $username:$username /home/$username/backups/$sitename;
 	addbase;
@@ -542,7 +534,8 @@ addbase() {
 		else
 		mysql -e "CREATE USER ${username}@localhost IDENTIFIED BY '${userpassword}';"
 	fi;
-	base=${sitename/./_};
+	base=$(echo "$sitename" | sed 's/\./_/g' );
+	base=$(echo "$base" | sed 's/xn--//g' );
 	dbsearch=`mysql  -e "SHOW DATABASES" | grep ${base}`;
 	if [ ${dbsearch}!=${base} ]; then
 		mysql -e "CREATE DATABASE ${base} /*\!40100 DEFAULT CHARACTER SET utf8 */;"	
@@ -622,8 +615,7 @@ EOF
 # ================================ Add settings for ftp connection ==================================================
 # ====================== Добавление настроек соединения с ftp сервером для бэкапов ==================================
 backupsettings() {
-	if [ ! -e "/root/.netrc" ]; then
-		echo -e "\033[32;40m--------------------------------------------- 
+	echo -e "\033[32;40m--------------------------------------------- 
 		\rEN    12. Where will you store your backups?        |
 		\rEN    FTP server? 1 Yandex disk? 2 Locally? 3       |
 		\r---------------------------------------------
@@ -639,7 +631,7 @@ backupsettings() {
 			else 
 			backuplocal;
 		fi;
-	fi;
+	resume;
 }
 
 backuplocal() {
@@ -688,7 +680,6 @@ backupyandex() {
 	read -p 'ftp user: ' ya_pass;
 	apk add davfs2;
 	mkdir  /media/yadisk;
-	echo 'https://webdav.yandex.ru         /media/yadisk      davfs   user,rw,noauto 0 0' >> /etc/fstab;
 	echo "/media/yadisk $ya_login $ya_password" >> /etc/davfs2/secrets;
 	if [ ! -e "/etc/periodic/5min" ]; then
 		mkdir /etc/periodic/5min;
@@ -722,6 +713,7 @@ resume;
 }
 
 backupftp() {
+	if [ ! -e "/root/.netrc" ]; then
 	echo -e "\033[32;40m--------------------------------------------- 
 	\rEN      Enter ftp backup server address.     |
 	\rEN    (You should already have ftp server.)  |
@@ -753,7 +745,29 @@ backupftp() {
 	echo -e login $ftp_user >> /root/.netrc;
 	echo -e password $ftp_password >> /root/.netrc;
 	chmod 0600 /root/.netrc;
+	fi;
 	apk add curlftpfs;
+	mkdir /media/ftp;
+	cat > /etc/periodic/daily/$base'_backups' <<EOF
+#!/bin/sh
+		curlftpfs ftp://$ftp_server /media/ftp;
+		cd /media/ftp;
+		if [ ! -e $base'_backups' ]; then
+		mkdir $base_backups;
+		fi;
+		
+		tar -cjvf /home/$username/backups/$sitename/$sitename-$(date '+%d%m%y_%H:%M').tar.bz2 /home/$username/sitename
+		
+		mysqldump alp_tes | bzip2 > /home/$username/backups/$sitename/$base-$(date '+%d%m%y_%H:%M').sql.bz2
+		
+		mv /home/$username/backups/$sitename/* /media/ftp/$base_backups
+		
+	find /media/ftp/$base_backups -type f -mmin +10 -exec rm -rf {} \;
+	
+	cd ~;
+	
+	umount /media/ftp;
+EOF
 	resume;
 }
 
