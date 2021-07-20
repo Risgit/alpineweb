@@ -18,7 +18,6 @@ main() {
 	if [ ! -e "/usr/share/webapps/phpmyadmin" ]; then
 		phpadmin;
 		webadmin_password;
-		addbuttons;
 	fi;
 	newuser;
 }
@@ -88,7 +87,7 @@ openlite() {
 		# fi;
 		phpver=7;
 		wget https://github.com/Risgit/alpineweb/raw/Risgit-openlite/lsws.tar.gz;
-		tar xvf lsws.tar.gz;
+		tar xvf lsws.tar.gz > /dev/null;
 		mv /root/lsws /usr/local/lsws;
 		
 		cat > /etc/init.d/lsws << EOF
@@ -516,7 +515,7 @@ makerealsite() {
 	\rRU   Скачан и распакован InstantCMS $instantselect
 	\r--------------------------------------------- \e[0m";	
 	/usr/local/lsws/bin/lswsctrl restart
-	echo Site: "  " >> /root/."$username";
+	echo "  " >> /root/."$username";
 	echo Site: "$sitename" >> /root/."$username";
 	echo User: "$username" >> /root/."$username";
 	echo Password: "$userpassword" >> /root/."$username";
@@ -631,6 +630,7 @@ backupsettings() {
 			else 
 			backuplocal;
 		fi;
+	addbuttons;	
 	resume;
 }
 
@@ -677,7 +677,7 @@ backupyandex() {
 	\r---------------------------------------------
 	\rRU       Введите ваш пароль на яндексе       |
 	\r--------------------------------------------- \e[0m";
-	read -p 'ftp user: ' ya_pass;
+	read -p 'ya_pass: ' ya_pass;
 	apk add davfs2;
 	mkdir  /media/yadisk;
 	echo "/media/yadisk $ya_login $ya_password" >> /etc/davfs2/secrets;
@@ -746,21 +746,28 @@ backupftp() {
 	echo -e password $ftp_password >> /root/.netrc;
 	chmod 0600 /root/.netrc;
 	fi;
+	if [ ! -e "/etc/periodic/5min" ]; then
+		mkdir /etc/periodic/5min;
+	fi;
+	echo "#!/bin/sh" > /etc/periodic/5min/$base;
+	echo "/usr/bin/php /home/$username/$sitename/cron.php $sitename > /dev/null" >> /etc/periodic/5min/$base;
+	chmod 0755 /etc/periodic/5min/$base;
 	apk add curlftpfs;
 	mkdir /media/ftp;
 	cat > /etc/periodic/daily/$base'_backups' <<EOF
 #!/bin/sh
-		curlftpfs ftp://$ftp_server /media/ftp;
+		modprobe fuse;
+		curlftpfs ftp://${ftp_server} /media/ftp;
 		cd /media/ftp;
-		if [ ! -e $base'_backups' ]; then
-		mkdir $base_backups;
+		if [ ! -e ${base}_backups ]; then
+		mkdir ${base}_backups;
 		fi;
 		
-		tar -cjvf /home/$username/backups/$sitename/$sitename-$(date '+%d%m%y_%H:%M').tar.bz2 /home/$username/sitename
+		tar -cjvf /home/$username/backups/$sitename/$sitename-\$(date '+%d%m%y_%H:%M').tar.bz2 /home/$username/$sitename
 		
-		mysqldump alp_tes | bzip2 > /home/$username/backups/$sitename/$base-$(date '+%d%m%y_%H:%M').sql.bz2
+		mysqldump alp_tes | bzip2 > /home/$username/backups/$sitename/${base}-\$(date '+%d%m%y_%H:%M').sql.bz2
 		
-		mv /home/$username/backups/$sitename/* /media/ftp/$base_backups
+		mv /home/$username/backups/$sitename/* /media/ftp/${base}_backups
 		
 	find /media/ftp/$base_backups -type f -mmin +10 -exec rm -rf {} \;
 	
@@ -815,9 +822,15 @@ addbuttons() {
 }
 
 resume() {	
-	echo "username=$username" > .lastuser;
-	echo "sitename=$sitename" >> .lastuser;
-	echo "base=$base" >> .lastuser;
+	echo "username=$username;" > .lastuser;
+	echo "sitename=$sitename;" >> .lastuser;
+	echo "userpassword=$userpassword;" >> .lastuser;
+	echo "base=$base;" >> .lastuser;
+	echo "ya_login=$ya_login;" >> .lastuser;
+	echo "ya_pass=$ya_pass;" >> .lastuser;
+	echo "ftp_server=$ftp_server;" >> .lastuser;
+	echo "ftp_user=$ftp_user;" >> .lastuser;
+	echo "ftp_password=$ftp_password;" >> .lastuser;
 	echo -e "\033[32;40m--------------------------------------------- 
 	\rEN   Openlitespeed, php, mysql, phpmyadmin,        
 	\rEN   rainloop, Alpine Configuration Framework (ACF) 
