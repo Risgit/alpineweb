@@ -196,7 +196,7 @@ ftpinstall() {
 		\r---------------------------------------------
 		\rRU           6. Установка proftpd            |
 		\r--------------------------------------------- \e[0m";		
-		apk add lftp proftpd;
+		apk add proftpd;
 		rc-service proftpd start;
 		rc-update add proftpd;
 		sed -i 's/#DefaultRoot ~/DefaultRoot     ~ !adm/g'  /etc/proftpd/proftpd.conf;
@@ -754,50 +754,35 @@ backupftp() {
 	chmod 0755 /etc/periodic/5min/$base;
 	apk add curlftpfs;
 	mkdir /media/ftp;
+	tz=$(date +"%z");
+	tz=${tz//0/};
+	shift=$(( $tz * 60 ));
+	deltime=$((1440 - $shift));
 	cat > /etc/periodic/daily/$base'_backups' <<EOF
 #!/bin/sh
-		modprobe fuse;
-		curlftpfs ftp://${ftp_server} /media/ftp;
-		cd /media/ftp;
-		if [ ! -e ${base}_backups ]; then
-		mkdir ${base}_backups;
-		fi;
+modprobe fuse;
+curlftpfs ftp://${ftp_server} /media/ftp;
+cd /media/ftp;
+if [ ! -e ${base}_backups ]; then
+	mkdir ${base}_backups;
+fi;
 		
-		tar -cjvf /home/$username/backups/$sitename/$sitename-\$(date '+%d%m%y_%H:%M').tar.bz2 /home/$username/$sitename
+tar -cjvf /media/ftp/${base}_backups/$sitename-\$(date '+%d%m%y_%H:%M').tar.bz2 /home/$username/$sitename
 		
-		mysqldump alp_tes | bzip2 > /home/$username/backups/$sitename/${base}-\$(date '+%d%m%y_%H:%M').sql.bz2
+mysqldump $base | bzip2 > /media/ftp/${base}_backups/${base}-\$(date '+%d%m%y_%H:%M').sql.bz2
 		
-		mv /home/$username/backups/$sitename/* /media/ftp/${base}_backups
-		
-	find /media/ftp/$base_backups -type f -mmin +10 -exec rm -rf {} \;
+find /media/ftp/${base}_backups -type f -mmin +100 -exec rm -rf {} \;
 	
-	cd ~;
+cd ~;
 	
-	umount /media/ftp;
-EOF
-	resume;
-}
-
-backup() {
-	if [ ! -e "/etc/periodic/5min" ]; then
-		mkdir /etc/periodic/5min;
-	fi;
-	echo "#!/bin/sh" > /etc/periodic/5min/$base;
-	echo "/usr/bin/php /home/$username/$sitename/cron.php $sitename > /dev/null" >> /etc/periodic/5min/$base;
-	chmod 0755 /etc/periodic/5min/$base;
-	
-	cat > /etc/periodic/daily/$base'_backups' <<EOF
-#!/bin/sh
-		tar -cjvf /home/$username/backups/$sitename/$sitename-\$(date '+%d%m%y_%H:%M').tar.bz2 /home/$username/$sitename
-		
-		mysqldump $base | bzip2 > /home/$username/backups/$sitename/$base-\$(date '+%d%m%y_%H:%M').sql.bz2
-		
-		find /home/$username/backups/$sitename -type f -mmin +16 -exec rm -rf {} \;
+umount /media/ftp;
 EOF
 	chmod 0755 /etc/periodic/daily/$base'_backups';
+	moddir=$(echo /lib/modules/`uname -r`);
+	insmod $moddir/kernel/fs/fuse/fuse.ko;
+	insmod $moddir/kernel/fs/fuse/virtiofs.ko;
 	resume;
 }
-
 
 # ================  Adding buttons to Openliteserver admin panel and show resume ======================================
 # ================  Добавление кнопок в админпанель openliteserver и вывод резюме =====================================
@@ -864,11 +849,12 @@ resume() {
 	exit;
 }
 
+#================== Remove user with his folders and databases (ondemand rmuser [username]) ====================
+#================== Удаление пользователя с его папками и базами данных (по запросу rmuser [username]) =========
 rmuser() {
 	deluser --remove-home "$usertodelete" >> /dev/null;
 	del=\'"$usertodelete"\'
 	delbase=\""'$usertodelete'@'localhost'"\"
-	# bases=$(echo SELECT TABLE_SCHEMA FROM information_schema.SCHEMA_PRIVILEGES WHERE GRANTEE = $delbase GROUP BY TABLE_SCHEMA | mysql -B | sed -e 1d )
 	bases=$(echo SELECT Db FROM mysql.db WHERE User = $del GROUP BY Db | mysql -B | sed -e 1d )
 	bases=${bases//
 /; DROP DATABASE  }
@@ -889,5 +875,3 @@ if [ -n "$1" ]
 	else
 	main
 fi;
-
-
