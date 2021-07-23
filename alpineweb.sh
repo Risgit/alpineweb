@@ -771,7 +771,7 @@ tar -cjvf /media/ftp/${base}_backups/$sitename-\$(date '+%d%m%y_%H:%M').tar.bz2 
 		
 mysqldump $base | bzip2 > /media/ftp/${base}_backups/${base}-\$(date '+%d%m%y_%H:%M').sql.bz2
 		
-find /media/ftp/${base}_backups -type f -mmin +100 -exec rm -rf {} \;
+find /media/ftp/${base}_backups -type f -mmin +${deltime} -exec rm -rf {} \;
 	
 cd ~;
 	
