@@ -391,7 +391,7 @@ newsite() {
 	\r--------------------------------------------- \e[0m";		
 	read -p 'Site name: ' sitename;
 	sitename=$(echo "$sitename" | idn);
-	if [ -e /home/$username/$sitename ]; then 
+	if [ -e /home/$username/www/$sitename ]; then 
 		echo -e "\033[32;40m--------------------------------------------- 
 		\rEN   \e[0m\033[31;40m       Site $sitename already exists!  \e[0m\033[32;40m
 		\rEN            Do you want to install        
@@ -442,7 +442,7 @@ certinstall() {
 addsite() {
 	cat >> /usr/local/lsws/conf/httpd_config.conf <<EOF
 virtualhost $sitename {
-		vhRoot                  /home/$username/$sitename
+		vhRoot                  /home/$username/www/$sitename
 		configFile              \$SERVER_ROOT/conf/vhosts/\$VH_NAME/vhconf.conf
 		allowSymbolLink         1
 		enableScript            1
@@ -492,8 +492,8 @@ EOF
 # ======================== Создание пустой папки для сайта =======================================
 makeblanksite() {
 	chown -R nobody:nobody /usr/local/lsws/conf/vhosts/$sitename;
-	mkdir "/home/$username/$sitename";
-	chown -R $username:$username /home/$username/$sitename;
+	mkdir "/home/$username/www/$sitename";
+	chown -R $username:$username /home/$username/www/$sitename;
 	sed -i '/*:80$/ a \'"map                     $sitename $sitename"'' /usr/local/lsws/conf/httpd_config.conf;
 	addbase
 }
@@ -508,7 +508,7 @@ makerealsite() {
 	unzip $instantselect.zip > /dev/null;
 	mv icms2-$instantselect $sitename;
 	rm $instantselect.zip;
-	chown -R $username:$username /home/$username/$sitename;
+	chown -R $username:$username /home/$username/www/$sitename;
 	cd ~;
 	echo -e "\033[36;40m--------------------------------------------- 
 	\rEN Downloaded and extracted InstantCMS $instantselect
@@ -649,12 +649,12 @@ backuplocal() {
 		mkdir /etc/periodic/5min;
 	fi;
 	echo "#!/bin/sh" > /etc/periodic/5min/$base;
-	echo "/usr/bin/php /home/$username/$sitename/cron.php $sitename > /dev/null" >> /etc/periodic/5min/$base;
+	echo "/usr/bin/php /home/$username/www/$sitename/cron.php $sitename > /dev/null" >> /etc/periodic/5min/$base;
 	chmod 0755 /etc/periodic/5min/$base;
 	
 	cat > /etc/periodic/daily/$base'_backups' <<EOF
 #!/bin/sh
-		tar -czvf /home/$username/backups/$sitename/$sitename-\$(date '+%d%m%y_%H:%M').tar.gz /home/$username/$sitename
+		tar -czvf /home/$username/backups/$sitename/$sitename-\$(date '+%d%m%y_%H:%M').tar.gz /home/$username/www/$sitename
 		
 		mysqldump $base | gzip > /home/$username/backups/$sitename/$base-\$(date '+%d%m%y_%H:%M').sql.gz
 		
@@ -687,7 +687,7 @@ backupyandex() {
 		mkdir /etc/periodic/5min;
 	fi;
 	echo "#!/bin/sh" > /etc/periodic/5min/$base;
-	echo "/usr/bin/php /home/$username/$sitename/cron.php $sitename > /dev/null" >> /etc/periodic/5min/$base;
+	echo "/usr/bin/php /home/$username/www/$sitename/cron.php $sitename > /dev/null" >> /etc/periodic/5min/$base;
 	chmod 0755 /etc/periodic/5min/$base;
 	
 	cat > /etc/periodic/daily/$base'_backups' <<EOF
@@ -752,7 +752,7 @@ backupftp() {
 		mkdir /etc/periodic/5min;
 	fi;
 	echo "#!/bin/sh" > /etc/periodic/5min/$base;
-	echo "/usr/bin/php /home/$username/$sitename/cron.php $sitename > /dev/null" >> /etc/periodic/5min/$base;
+	echo "/usr/bin/php /home/$username/www/$sitename/cron.php $sitename > /dev/null" >> /etc/periodic/5min/$base;
 	chmod 0755 /etc/periodic/5min/$base;
 	apk add curlftpfs;
 	mkdir /media/ftp;
@@ -769,7 +769,7 @@ if [ ! -e ${base}_backups ]; then
 	mkdir ${base}_backups;
 fi;
 		
-tar -czvf /media/ftp/${base}_backups/$sitename-\$(date '+%d%m%y_%H:%M').tar.gz /home/$username/$sitename
+tar -czvf /media/ftp/${base}_backups/$sitename-\$(date '+%d%m%y_%H:%M').tar.gz /home/$username/www/$sitename
 		
 mysqldump $base | gzip > /media/ftp/${base}_backups/${base}-\$(date '+%d%m%y_%H:%M').sql.gz
 		
