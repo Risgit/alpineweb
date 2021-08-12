@@ -652,9 +652,9 @@ backuplocal() {
 	
 	cat > /etc/periodic/daily/$base'_backups' <<EOF
 #!/bin/sh
-		tar -cjvf /home/$username/backups/$sitename/$sitename-\$(date '+%d%m%y_%H:%M').tar.bz2 /home/$username/$sitename
+		tar -czvf /home/$username/backups/$sitename/$sitename-\$(date '+%d%m%y_%H:%M').tar.gz /home/$username/$sitename
 		
-		mysqldump $base | bzip2 > /home/$username/backups/$sitename/$base-\$(date '+%d%m%y_%H:%M').sql.bz2
+		mysqldump $base | gzip > /home/$username/backups/$sitename/$base-\$(date '+%d%m%y_%H:%M').sql.gz
 		
 		find /home/$username/backups/$sitename -type f -mmin +16 -exec rm -rf {} \;
 EOF
@@ -696,9 +696,9 @@ backupyandex() {
 		mkdir $base_backups;
 		fi;
 		
-		tar -cjvf /home/$username/backups/$sitename/$sitename-$(date '+%d%m%y_%H:%M').tar.bz2 /home/$username/sitename
+		tar -czvf /home/$username/backups/$sitename/$sitename-$(date '+%d%m%y_%H:%M').tar.gz /home/$username/sitename
 		
-		mysqldump alp_tes | bzip2 > /home/$username/backups/$sitename/$base-$(date '+%d%m%y_%H:%M').sql.bz2
+		mysqldump alp_tes | gzip > /home/$username/backups/$sitename/$base-$(date '+%d%m%y_%H:%M').sql.gz
 		
 		mv /home/$username/backups/$sitename/* /media/yadisk/$base_backups
 		
@@ -767,9 +767,9 @@ if [ ! -e ${base}_backups ]; then
 	mkdir ${base}_backups;
 fi;
 		
-tar -cjvf /media/ftp/${base}_backups/$sitename-\$(date '+%d%m%y_%H:%M').tar.bz2 /home/$username/$sitename
+tar -czvf /media/ftp/${base}_backups/$sitename-\$(date '+%d%m%y_%H:%M').tar.gz /home/$username/$sitename
 		
-mysqldump $base | bzip2 > /media/ftp/${base}_backups/${base}-\$(date '+%d%m%y_%H:%M').sql.bz2
+mysqldump $base | gzip > /media/ftp/${base}_backups/${base}-\$(date '+%d%m%y_%H:%M').sql.gz
 		
 find /media/ftp/${base}_backups -type f -mmin +${deltime} -exec rm -rf {} \;
 	
