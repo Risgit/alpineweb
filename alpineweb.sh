@@ -360,7 +360,8 @@ newuser() {
 			adduser -D --shell /bin/ash $username
 			echo $username:$userpassword | chpasswd $username:$userpassword > /dev/null;
 			mkdir /home/$username/backups;
-			chown -R $username:$username /home/$username/backups;
+			mkdir /home/$username/www;
+			chown -R $username:$username /home/$username;
 			newsite;
 			else
 			echo -e "\033[31;40m--------------------------------------------- 
@@ -503,7 +504,7 @@ makeblanksite() {
 makerealsite() {
 	chown -R nobody:nobody /usr/local/lsws/conf/vhosts/$sitename;
 	sed -i '/*:80$/ a \'"map                     $sitename $sitename"'' /usr/local/lsws/conf/httpd_config.conf;
-	cd "/home/$username";
+	cd "/home/$username/www";
 	wget https://github.com/instantsoft/icms2/archive/refs/tags/$instantselect.zip;
 	unzip $instantselect.zip > /dev/null;
 	mv icms2-$instantselect $sitename;
