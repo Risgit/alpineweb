@@ -177,7 +177,7 @@ phpinstall() {
 		apk add php$phpver-litespeed php$phpver-xml php$phpver-fileinfo php$phpver-ftp php$phpver-curl php$phpver-intl php$phpver-bcmath php$phpver-gd;
 		apk add php$phpver-json php$phpver-iconv php$phpver-zip php$phpver-pecl-memcache php$phpver-opcache;
 		apk add php$phpver-sockets php$phpver-posix php$phpver-mysqli php$phpver-pecl-memcached php$phpver-openssl php$phpver-simplexml;
-		apk add memcached bind-tools openssh libidn mc fail2ban;
+		apk add memcached bind-tools openssh libidn mc fail2ban libstdc++;
 		rc-service memcached start;
 		rc-update add memcached;
 		pkill lsphp;
