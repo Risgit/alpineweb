@@ -85,7 +85,7 @@ openlite() {
 			# # rc-update add litespeed;
 			# # rc-service litespeed start;
 		# fi;
-		phpver=7;
+		phpver=8;
 		wget https://github.com/Risgit/alpineweb/raw/Risgit-openlite/lsws.tar.gz;
 		tar xvf lsws.tar.gz > /dev/null;
 		mv /root/lsws /usr/local/lsws;
