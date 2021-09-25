@@ -285,6 +285,12 @@ virtualhost phpmyadmin {
 			certFile                \$SERVER_ROOT/admin/conf/webadmin.crt
 			map                     phpmyadmin *
 			}
+			listener HTTP {
+			address                 *:80
+			}
+			listener HTTPS {
+			address                 *:443
+			}
 EOF
 		mkdir '/usr/local/lsws/conf/vhosts/phpmyadmin';
 		cat > /usr/local/lsws/conf/vhosts/phpmyadmin/vhconf.conf << EOF
