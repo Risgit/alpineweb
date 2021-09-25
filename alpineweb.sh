@@ -5,9 +5,9 @@ main() {
 		intro;
 		repo;
 		upgrade;
+		phpinstall;
 		openlite;
 		acf;
-		phpinstall;
 		ftpinstall;
 	fi;
 	if [ ! -e "/usr/bin/mariadbd" ]; then
