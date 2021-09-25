@@ -287,9 +287,11 @@ virtualhost phpmyadmin {
 			}
 			listener HTTP {
 			address                 *:80
+			secure                  0
 			}
 			listener HTTPS {
 			address                 *:443
+			secure                  1
 			}
 EOF
 		mkdir '/usr/local/lsws/conf/vhosts/phpmyadmin';
