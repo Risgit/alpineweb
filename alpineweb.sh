@@ -708,7 +708,7 @@ backupyandex() {
 		mkdir $base_backups;
 		fi;
 		
-		tar -czvf /home/$username/backups/$sitename/$sitename-$(date '+%d%m%y_%H:%M').tar.gz /home/$username/sitename
+		tar -czvf /home/$username/backups/$sitename/$sitename-$(date '+%d%m%y_%H:%M').tar.gz /home/$username/www/$sitename
 		
 		mysqldump alp_tes | gzip > /home/$username/backups/$sitename/$base-$(date '+%d%m%y_%H:%M').sql.gz
 		
