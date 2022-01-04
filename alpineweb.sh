@@ -479,18 +479,18 @@ EOF
 	
 	echo -e "\033[32;40m--------------------------------------------- 
 	\rEN       select InstansCMS version           |
-	\rEN      for install (2.14.2 default )        |       
+	\rEN      for install (2.15.0 default )        |       
 	\rEN     or n for not install InstantCMS       |
 	\r---------------------------------------------
 	\r---------------------------------------------
 	\rRU        Выберите версию InstantCMS         | 
-	\rRU    для установки (по умолчанию 2.14.2)    |
+	\rRU    для установки (по умолчанию 2.15.0)    |
 	\rRU              или нажмите n,               |
 	\rRU     чтобы не устанавливать InstantCMS     |
 	\r--------------------------------------------- \e[0m";
 	
-	read -p "Version InstansCMS [2.14.2]: " instantselect
-	instantselect=${instantselect:-2.14.2}
+	read -p "Version InstansCMS [2.15.0]: " instantselect
+	instantselect=${instantselect:-2.15.0}
 	if [ "$instantselect" == "n" ]; then
 		makeblanksite;
 		else
