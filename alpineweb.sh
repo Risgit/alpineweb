@@ -1,6 +1,7 @@
 #!/bin/ash
 
-set -euxo pipefail
+# set -euxo pipefail
+set -e
 
 main() {
 	if [ ! -e "/etc/init.d/litespeed" ]; then
@@ -143,8 +144,8 @@ appsinstall() {
 # ======================= Установка proftpd ===========================================================================
 ftpinstall() {
 	if [ ! -e '/etc/proftpd' ]; then
-		mkdir /root/.config;
-		mkdir /root/.config/lftp;
+		mkdir -f /root/.config;
+		mkdir -f /root/.config/lftp;
 		echo -e "\033[35m--------------------------------------------- 
 		\rEN            6. Install proftpd             |
 		\r---------------------------------------------
@@ -384,11 +385,13 @@ newsite() {
 		\rRU            Варианты: 7 8 81 82       
 		\r--------------------------------------------- \e[0m";
 		read -p "Select php version :" phpver;
+		if [ ! -e /usr/bin/lsphp$phpver ]; then
 		apk add php$phpver-litespeed php$phpver-xml php$phpver-fileinfo php$phpver-ftp php$phpver-curl php$phpver-intl php$phpver-bcmath php$phpver-gd;
 		apk add php$phpver-mbstring php$phpver-session php$phpver-json php$phpver-iconv php$phpver-zip php$phpver-opcache;
 		apk add php$phpver-sockets php$phpver-posix php$phpver-mysqli php$phpver-openssl php$phpver-simplexml php$phpver-zip;
 		apk add php$phpver-pecl-memcached  php$phpver-pecl-memcache;
 		addbuttons;
+		fi
 		addsite;
 	fi;
 }
@@ -521,16 +524,19 @@ makerealsite() {
 # =============================== Creating mysql user and database for this site ==========================
 # ============================= Создание пользователя mysql и базы данных для сайта =======================
 addbase() {
-	if [ echo "SELECT COUNT(*) FROM mysql.user WHERE user = '$username';" | mariadb | grep 1 &> /dev/null ]; then
-		mariadb -e "CREATE USER ${username}@localhost IDENTIFIED BY '${userpassword}';"
+	if echo "SELECT COUNT(*) FROM mysql.user WHERE user = '$username';" | mariadb | grep 1 &> /dev/null ; then
+		echo "Mysqluser $username exsists"
+		else 
+		mariadb -e "CREATE USER ${username}@'%' IDENTIFIED BY '${userpassword}';"
+		echo "Mysqluser $username created "
 	fi;
 	base=$(echo "$sitename" | sed 's/\./_/g' );
 	base=$(echo "$base" | sed 's/xn--//g' );
-	# dbsearch=`mariadb -e "SHOW DATABASES" | grep ${base}`;
-	if [ ! echo "SHOW DATABASES" | mariadb | grep ${base} &> /dev/null ]; then
-	# if [ ${dbsearch}!=${base} ]; then
+	if echo "SHOW DATABASES" | mariadb | grep ${base} &> /dev/null ; then
+		echo "Database $base exists"
+		else
 		mariadb -e "CREATE DATABASE ${base} /*\!40100 DEFAULT CHARACTER SET utf8 */;"	
-		mariadb -e "GRANT ALL PRIVILEGES ON ${base}.* TO '${username}'@'localhost';"
+		mariadb -e "GRANT ALL PRIVILEGES ON ${base}.* TO '${username}'@'%';"
 		mariadb -e "FLUSH PRIVILEGES;";
 		echo -e "\033[35m--------------------------------------------- 
 		\rEN            Site $sitename was created.
@@ -799,20 +805,21 @@ addbuttons() {
 }
 
 resume() {	
-	rc-service litespeed restart;
-	echo "username=$username;" > .lastuser;
-	echo "sitename=$sitename;" >> .lastuser;
-	echo "userpassword=$userpassword;" >> .lastuser;
-	echo "base=$base;" >> .lastuser;
-	if [[ $ftpselect == 2 ]]; then
+	
+	echo "username=$username" > .lastuser
+	echo "sitename=$sitename" >> .lastuser
+	echo "userpassword=$userpassword" >> .lastuser
+	echo "base=$base" >> .lastuser
+	if [ $ftpselect == 2 ]; then
 	echo "ya_login=$ya_login;" >> .lastuser;
 	echo "ya_pass=$ya_pass;" >> .lastuser;
 	fi
-	if [[ $ftpselect == 1 ]]; then
+	if [ $ftpselect == 1 ]; then
 	echo "ftp_server=$ftp_server;" >> .lastuser;
 	echo "ftp_user=$ftp_user;" >> .lastuser;
 	echo "ftp_password=$ftp_password;" >> .lastuser;
 	fi
+	rc-service litespeed restart;
 	echo -e "\033[32m--------------------------------------------- 
 	\rEN   Openlitespeed, php, mysql, phpmyadmin,        
 	\rEN   rainloop, Alpine Configuration Framework (ACF) 
@@ -849,26 +856,28 @@ resume() {
 #================== Remove user with his folders and databases (ondemand rmuser [username]) ====================
 #================== Удаление пользователя с его папками и базами данных (по запросу rmuser [username]) =========
 rmuser() {
-	deluser --remove-home "$usertodelete" >> /dev/null;
-	del=\'"$usertodelete"\'
-	delbase=\""'$usertodelete'@'localhost'"\"
-	bases=$(echo SELECT Db FROM mysql.db WHERE User = $del GROUP BY Db | mariadb -B | sed -e 1d )
-	bases=${bases/
-/; DROP DATABASE  }
-	echo "DROP USER $del@'localhost'" | mariadb;
-	echo "DROP DATABASE $bases" | mariadb
-	echo "DELETE FROM mysql.db WHERE User = $del" |  mariadb
+	if id "$udel" >/dev/null 2>&1; then
+	deluser --remove-home "$udel" >> /dev/null;
+	fi
+	bases=$(echo "SELECT CONCAT('DROP DATABASE IF EXISTS ', Db, ';') FROM mysql.db WHERE User = '$udel' GROUP BY Db" | mariadb -B | sed -e 1d )
+	echo  $bases | mariadb
+	echo "DROP USER IF EXISTS $udel@'localhost'" | mariadb;
+	echo "DROP USER IF EXISTS $udel@'%'" | mariadb;
+	echo "User $udel removed"
 }
 
 if [ -n "${1+set}" ]
 	then
 	if [ $1 == 'rmuser' ]; then
-		usertodelete="$2"
+		udel="$2"
 	fi;
 	if [ -e ".lastuser" ]; then
 		. '.lastuser';
 	fi;
 	$1
 	else
+	if [ -e ".lastuser" ]; then
+		. '.lastuser';
+	fi;
 	main
 fi;
