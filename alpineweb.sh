@@ -18,9 +18,8 @@ main() {
 		mysql_secure;
 		dbdumpset;
 	fi;
-	if [ ! -e "/usr/share/webapps/phpmyadmin" ]; then
-		phpadmin;
-		webadmin_password;
+	if [ ! -e "/usr/share/webapps/adminer" ]; then
+		adminer;
 	fi;
 	newuser;
 }
@@ -74,17 +73,18 @@ openlite() {
 	apk add litespeed
 	apk add libidn;
 	
-	# if [ ! -e "/var/lib/litespeed/admin/conf/webadmin.crt" ]; then
+	if [ ! -e "/var/lib/litespeed/admin/conf/webadmin.crt" ]; then
 	#generate key for webadmin
     COMMNAME=$(hostname -s); echo $COMMNAME
     SSL_COUNTRY=CC
     csr="webadmin.csr"
     key="webadmin.key"
     cert="webadmin.crt"
-	# fi
-    
+	
 	MYIP=$(ip addr show eth0 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
     openssl req -subj "/CN=${COMMNAME}/O=webadmin/C=${SSL_COUNTRY}/extendedKeyUsage=1.3.6.1.5.5.7.3.1/subjectAltName=DNS.1=${MYIP}/" -new -newkey rsa:2048 -sha256 -days 1460 -nodes -x509 -keyout /etc/litespeed/admin/${key} -out /etc/litespeed/admin/${cert}
+	webadmin_password;
+	fi
 
 	rm /var/lib/litespeed/admin/misc/php.ini;
 	rc-service litespeed restart
@@ -144,8 +144,8 @@ appsinstall() {
 # ======================= Установка proftpd ===========================================================================
 ftpinstall() {
 	if [ ! -e '/etc/proftpd' ]; then
-		mkdir -f /root/.config;
-		mkdir -f /root/.config/lftp;
+		mkdir -p .config;
+		mkdir -p .config/lftp;
 		echo -e "\033[35m--------------------------------------------- 
 		\rEN            6. Install proftpd             |
 		\r---------------------------------------------
@@ -212,32 +212,36 @@ dbdumpset() {
 	fi;
 }
 
-# ============================ Install phpmyadmin ======================================================================
-# ============================ Установка phpmyadmin ====================================================================
-phpadmin() {
-	if [ ! -e "/usr/share/webapps/phpmyadmin" ]; then
+# ============================ Install adminer ======================================================================
+# ============================ Установка adminer ====================================================================
+adminer() {
+	if [ ! -e "/usr/share/webapps/adminer" ]; then
 		echo -e "\033[35m--------------------------------------------- 
-		\rEN       8. Install phpmyadmin               |
+		\rEN       8. Install adminer               |
 		\r---------------------------------------------
 		\r---------------------------------------------
-		\rRU      8. Установка phpmyadmin              |
+		\rRU      8. Установка adminer              |
 		\r--------------------------------------------- \e[0m";	
-		apk add phpmyadmin;
+		# apk add phpmyadmin;
+		mkdir -p /usr/share/webapps
+		mkdir -p /usr/share/webapps/adminer
+		wget https://github.com/vrana/adminer/releases/download/v4.8.1/adminer-4.8.1.php -O /usr/share/webapps/adminer/index.php
+		wget https://raw.githubusercontent.com/pappu687/adminer-theme/master/adminer.css -O /usr/share/webapps/adminer/adminer.css
 		cat >> /var/lib/litespeed/conf/httpd_config.conf << EOF
-virtualhost phpmyadmin {
-			vhRoot                  /usr/share/webapps/phpmyadmin
+virtualhost adminer {
+			vhRoot                  /usr/share/webapps/adminer
 			configFile              \$SERVER_ROOT/conf/vhosts/\$VH_NAME/vhconf.conf
 			allowSymbolLink         1
 			enableScript            1
 			restrained              1
 			setUIDMode              0
 			}
-			listener phpmyadmin {
+			listener adminer {
 			address                 *:7081
 			secure                  1
 			keyFile                 \$SERVER_ROOT/admin/conf/webadmin.key
 			certFile                \$SERVER_ROOT/admin/conf/webadmin.crt
-			map                     phpmyadmin *
+			map                     adminer *
 			}
 			listener HTTP {
 			address                 *:80
@@ -248,8 +252,8 @@ virtualhost phpmyadmin {
 			secure                  1
 			}
 EOF
-		mkdir '/var/lib/litespeed/conf/vhosts/phpmyadmin';
-		cat > /var/lib/litespeed/conf/vhosts/phpmyadmin/vhconf.conf << EOF
+		mkdir -p '/var/lib/litespeed/conf/vhosts/adminer';
+		cat > /var/lib/litespeed/conf/vhosts/adminer/vhconf.conf << EOF
 docRoot                   \$VH_ROOT
 			enableGzip                1
 			
@@ -269,7 +273,7 @@ docRoot                   \$VH_ROOT
 		
 		}
 EOF
-	chown -R litespeed:litespeed /var/lib/litespeed/conf/vhosts/phpmyadmin;
+	chown -R litespeed:litespeed /var/lib/litespeed/conf/vhosts/adminer;
 	fi;
 	rc-service litespeed restart;
 }
@@ -512,10 +516,12 @@ makerealsite() {
 	\rRU   Скачан и распакован InstantCMS $instantselect
 	\r--------------------------------------------- \e[0m";	
 	rc-service litespeed restart
-	echo "  " >> /root/."$username";
-	echo Site: "$sitename" >> /root/."$username";
-	echo User: "$username" >> /root/."$username";
-	echo Password: "$userpassword" >> /root/."$username";
+	if [ ! -e ".$username" ]; then
+	touch ".$username";
+	fi
+	echo Site: "$sitename" >> .$username;
+	echo User: "$username" >> .$username;
+	echo Password: "$userpassword" >> .$username;
 	mkdir /home/$username/backups/$sitename;
 	chown $username:$username /home/$username/backups/$sitename;
 	addbase;
@@ -546,7 +552,8 @@ addbase() {
 		\rRU            Сайт $sitename создан.
 		\rRU            База данных ${base} создана.                 
 		\r--------------------------------------------- \e[0m";	
-		echo Database: $base >> /root/.$username;
+		touch .$username
+		echo Database: $base >> .$username;
 	fi;
 	backupsettings;
 }
@@ -787,7 +794,7 @@ EOF
 addbuttons() {
 	rc-service litespeed restart;
 	butt=",'pma' => array(\n \
-	'title' => 'Phpmyadmin',\n \
+	'title' => 'Adminer',\n \
 	'url' => 'https://$sitename:7081',\n \
 	'url_target' => '_blank',\n \
 	'icon' => 'fa-database'),\n \
@@ -797,7 +804,7 @@ addbuttons() {
 	'url' => 'https://$sitename:7082',\n \
 	'icon' => 'fa-cogs')";
 	
-	if grep 'Phpmyadmin' /var/lib/litespeed/admin/html.open/view/inc/configui.php > /dev/null; then
+	if grep 'Adminer' /var/lib/litespeed/admin/html.open/view/inc/configui.php > /dev/null; then
 		continue;
 		else 
 		sed -i '105a '"$butt"'' /var/lib/litespeed/admin/html.open/view/inc/configui.php;
@@ -806,6 +813,7 @@ addbuttons() {
 
 resume() {	
 	
+	touch .lastuser
 	echo "username=$username" > .lastuser
 	echo "sitename=$sitename" >> .lastuser
 	echo "userpassword=$userpassword" >> .lastuser
@@ -821,7 +829,7 @@ resume() {
 	fi
 	rc-service litespeed restart;
 	echo -e "\033[32m--------------------------------------------- 
-	\rEN   Openlitespeed, php, mysql, phpmyadmin,        
+	\rEN   Openlitespeed, php, mysql, adminer,        
 	\rEN   rainloop, Alpine Configuration Framework (ACF) 
 	\rEN   and InstantCMS is installed!         
 	\rEN   Your site          \033[35m http://$sitename\033[32m
@@ -832,11 +840,11 @@ resume() {
 	\rEN   ftp user           \033[35m $username\033[32m
 	\rEN   ftp password       \033[35m $userpassword\033[32m
 	\rEN   OLS webadminpanel  \033[35m https://$sitename:7080\033[32m
-	\rEN   Phpmyadmin address \033[35m https://$sitename:7081\033[32m
+	\rEN   Adminer address \033[35m https://$sitename:7081\033[32m
 	\rEN   ACF                \033[35m https://$sitename:7082\033[32m
 	\r---------------------------------------------
 	\r---------------------------------------------
-	\rRU   Openlitespeed, php, mysql, phpmyadmin,        
+	\rRU   Openlitespeed, php, mysql, adminer,        
 	\rRU   rainloop, Alpine Configuration Framework (ACF) 
 	\rRU   и InstantCMS установлены!        
 	\rRU   Ваш сайт           \033[35m http://$sitename\033[32m
@@ -847,7 +855,7 @@ resume() {
 	\rRU   Пользователь ftp   \033[35m $username\033[32m
 	\rRU   Пароль ftp         \033[35m $userpassword\033[32m
 	\rRU   OLS webadminpanel  \033[35m https://$sitename:7080\033[32m
-	\rRU   Адрес phpmyadmin   \033[35m https://$sitename:7081\033[32m
+	\rRU   Адрес adminer   \033[35m https://$sitename:7081\033[32m
 	\rRU   ACF                \033[35m https://$sitename:7082\033[32m
 	\r---------------------------------------------\e[0m";
 	exit;
@@ -857,6 +865,14 @@ resume() {
 #================== Удаление пользователя с его папками и базами данных (по запросу rmuser [username]) =========
 rmuser() {
 	if id "$udel" >/dev/null 2>&1; then
+	configs=$(ls /home/$username/www)
+	for sitedel in $configs; do
+	rm -rf /etc/litespeed/vhosts/$sitedel
+	
+	sed -i "/virtualhost $sitedel {/,/}/d" /etc/litespeed/httpd_config.conf
+	sed -i -r "s/map\s*$sitedel\s*$sitedel//g" /etc/litespeed/httpd_config.conf 
+	
+	done
 	deluser --remove-home "$udel" >> /dev/null;
 	fi
 	bases=$(echo "SELECT CONCAT('DROP DATABASE IF EXISTS ', Db, ';') FROM mysql.db WHERE User = '$udel' GROUP BY Db" | mariadb -B | sed -e 1d )
