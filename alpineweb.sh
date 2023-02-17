@@ -572,9 +572,11 @@ newcert() {
 		\r--------------------------------------------- \e[0m";
 		read -p 'Enter your email: ' mail;
 		apk add certbot;
-		/var/lib/litespeed/bin/litespeedctrl stop;
+		apk add py3-pip;
+		python3 -m pip install certifi
+		rc-service litespeed stop;
 		certbot certonly --standalone --preferred-challenges http -d $sitename -m $mail;
-		/var/lib/litespeed/bin/litespeedctrl start;
+		rc-service litespeed start;
 		sed -i '/*:443/a  \'"  map                     $sitename $sitename"'' /var/lib/litespeed/conf/httpd_config.conf;
 		cat > /var/lib/litespeed/conf/vhosts/$sitename/vhconf.conf << EOF
 docRoot                   \$VH_ROOT
